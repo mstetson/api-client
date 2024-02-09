@@ -16,6 +16,14 @@ import (
 	"bitbucket.org/classroomsystems/api-cli/opsecret"
 )
 
+type ErrNotFound struct {
+	FileName string
+}
+
+func (e ErrNotFound) Error() string {
+	return fmt.Sprintf("no %s found in any parent dir", e.FileName)
+}
+
 func Init(dst any, apiName string) *AuthState {
 	auth, err := Load(dst, apiName)
 	if err != nil {
@@ -74,7 +82,7 @@ func openConfig(name string) (*os.File, error) {
 		}
 		d := filepath.Dir(parent)
 		if len(d) >= len(parent) {
-			return nil, fmt.Errorf("no %s found in any parent dir", name)
+			return nil, ErrNotFound{name}
 		}
 		parent = d
 	}

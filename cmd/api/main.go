@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -49,8 +50,12 @@ func main() {
 	var err error
 	authState, err = apiconfig.Load(&config, *configName)
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		if *configName == "" && errors.As(err, &apiconfig.ErrNotFound{}) {
+			// the default config is fine
+		} else {
+			log.Println(err)
+			os.Exit(1)
+		}
 	}
 	err = cmd.Dispatch(context.Background(), flag.Args())
 	if err != nil {
