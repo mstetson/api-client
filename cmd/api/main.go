@@ -19,13 +19,6 @@ import (
 var cmd = &commander.Command{
 	UsageLine: "api [-c config] command",
 	Short:     "HTTP API CLI",
-	Subcommands: []*commander.Command{
-		deleteCommand,
-		docsCommand,
-		getCommand,
-		postCommand,
-		putCommand,
-	},
 }
 
 var configName = flag.String("c", "", "API name for configuration")
@@ -36,10 +29,10 @@ type Config struct {
 	DocsURL            string
 	DefaultContentType string
 
-	BasicAuth *struct {
-		Username string
-		Password string
-	}
+	BasicAuth *BasicAuthConfig
+	QueryAuth QueryAuthConfig
+
+	Command []*Command
 }
 
 var config Config
@@ -48,6 +41,9 @@ var authState *apiconfig.AuthState
 func main() {
 	flag.Parse()
 	var err error
+	if *configName != "" {
+		cmd.Short = fmt.Sprintf("HTTP API CLI (%s)", *configName)
+	}
 	authState, err = apiconfig.Load(&config, *configName)
 	if err != nil {
 		if *configName == "" && errors.As(err, &apiconfig.ErrNotFound{}) {
@@ -57,11 +53,31 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	if config.DocsURL != "" {
+		cmd.Subcommands = append(cmd.Subcommands, docsCommand)
+	}
+	err = config.addCommands(cmd)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
 	err = cmd.Dispatch(context.Background(), flag.Args())
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
+}
+
+func (c *Config) addCommands(cmd *commander.Command) error {
+	subs := append(defaultCommands, c.Command...)
+	for _, s := range subs {
+		sub, err := s.Commander()
+		if err != nil {
+			return err
+		}
+		cmd.Subcommands = append(cmd.Subcommands, sub)
+	}
+	return nil
 }
 
 type Client interface {
@@ -72,6 +88,8 @@ func (c *Config) httpClient() (Client, error) {
 	switch c.Auth {
 	case "basic":
 		return c.basicAuthClient()
+	case "query":
+		return c.queryAuthClient()
 	case "":
 		return http.DefaultClient, nil
 	default:
@@ -94,7 +112,7 @@ func (c *Config) relativeURLString(urlStr string) (string, error) {
 	return base.ResolveReference(u).String(), nil
 }
 
-func (c *Config) doRequest(req *http.Request) error {
+func (c *Config) doRequest(req *http.Request, out io.Writer) error {
 	if req.Header.Get("Accept") == "" {
 		req.Header.Add("Accept", c.DefaultContentType)
 	}
@@ -114,6 +132,12 @@ func (c *Config) doRequest(req *http.Request) error {
 		resp.Write(os.Stderr)
 		return fmt.Errorf("HTTP error %s", resp.Status)
 	}
-	_, err = io.Copy(os.Stdout, resp.Body)
-	return err
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+	if closer, ok := out.(io.Closer); ok {
+		return closer.Close()
+	}
+	return nil
 }

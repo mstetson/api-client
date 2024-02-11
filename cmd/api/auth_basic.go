@@ -7,6 +7,11 @@ import (
 	"bitbucket.org/classroomsystems/api-cli/apiconfig"
 )
 
+type BasicAuthConfig struct {
+	Username string
+	Password string
+}
+
 func (c *Config) basicAuthClient() (Client, error) {
 	if c.BasicAuth == nil {
 		return nil, fmt.Errorf("basic auth not configured")

@@ -10,7 +10,7 @@ import (
 var docsCommand = &commander.Command{
 	Run:       runDocs,
 	UsageLine: "docs",
-	Short:     "open documentation, if defined",
+	Short:     "open documentation web site",
 }
 
 func runDocs(cmd *commander.Command, args []string) error {
