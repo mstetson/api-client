@@ -9,7 +9,7 @@ import (
 
 type QueryAuthConfig map[string]string
 
-func (c *Config) queryAuthClient() (Client, error) {
+func newQueryAuthClient(c *Config, a *apiconfig.AuthState) (Client, error) {
 	if c.QueryAuth == nil {
 		return nil, fmt.Errorf("query auth not configured")
 	}

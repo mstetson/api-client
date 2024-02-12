@@ -12,7 +12,7 @@ type BasicAuthConfig struct {
 	Password string
 }
 
-func (c *Config) basicAuthClient() (Client, error) {
+func newBasicAuthClient(c *Config, a *apiconfig.AuthState) (Client, error) {
 	if c.BasicAuth == nil {
 		return nil, fmt.Errorf("basic auth not configured")
 	}

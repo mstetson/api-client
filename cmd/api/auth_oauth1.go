@@ -72,7 +72,7 @@ func runOAuth1(cmd *commander.Command, args []string) error {
 	if config.OAuth1 == nil {
 		return fmt.Errorf("oauth1 not configured")
 	}
-	c, err := newOAuth1Client(config.OAuth1, authState)
+	c, err := newOAuth1ClientConcrete(config.OAuth1, authState)
 	if err != nil {
 		return err
 	}
@@ -108,11 +108,11 @@ func runOAuth1(cmd *commander.Command, args []string) error {
 	}
 }
 
-func (c *Config) oauth1Client() (Client, error) {
+func newOAuth1Client(c *Config, a *apiconfig.AuthState) (Client, error) {
 	if c.OAuth1 == nil {
 		return nil, fmt.Errorf("oauth1 not configured")
 	}
-	cl, err := newOAuth1Client(config.OAuth1, authState)
+	cl, err := newOAuth1ClientConcrete(c.OAuth1, a)
 	return cl, err
 }
 
@@ -127,7 +127,7 @@ type oauth1Client struct {
 	client           *http.Client
 }
 
-func newOAuth1Client(config *OAuth1Config, auth *apiconfig.AuthState) (*oauth1Client, error) {
+func newOAuth1ClientConcrete(config *OAuth1Config, auth *apiconfig.AuthState) (*oauth1Client, error) {
 	config, err := config.deref()
 	if err != nil {
 		return nil, err

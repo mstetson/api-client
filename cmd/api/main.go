@@ -42,6 +42,16 @@ type Config struct {
 var config Config
 var authState *apiconfig.AuthState
 
+var authTypeClients = map[string]func(*Config, *apiconfig.AuthState) (Client, error){
+	"basic":  newBasicAuthClient,
+	"oauth1": newOAuth1Client,
+	"query":  newQueryAuthClient,
+}
+
+var authCommands = map[string][]*commander.Command{
+	"oauth1": oauth1Commands,
+}
+
 func main() {
 	flag.Parse()
 	var err error
@@ -84,9 +94,8 @@ func (c *Config) addCommands(cmd *commander.Command) error {
 	if config.DocsURL != "" {
 		cmd.Subcommands = append(cmd.Subcommands, docsCommand)
 	}
-	switch c.Auth {
-	case "oauth1":
-		cmd.Subcommands = append(cmd.Subcommands, oauth1Commands...)
+	if cmds := authCommands[c.Auth]; cmds != nil {
+		cmd.Subcommands = append(cmd.Subcommands, cmds...)
 	}
 	subs := append(defaultCommands, c.Command...)
 	for _, s := range subs {
@@ -104,18 +113,14 @@ type Client interface {
 }
 
 func (c *Config) httpClient() (Client, error) {
-	switch c.Auth {
-	case "basic":
-		return c.basicAuthClient()
-	case "oauth1":
-		return c.oauth1Client()
-	case "query":
-		return c.queryAuthClient()
-	case "":
+	if c.Auth == "" {
 		return http.DefaultClient, nil
-	default:
+	}
+	fn, ok := authTypeClients[c.Auth]
+	if !ok {
 		return nil, fmt.Errorf("unknown authorization type: %s", c.Auth)
 	}
+	return fn(c, authState)
 }
 
 func (c *Config) relativeURLString(urlStr string) (string, error) {
