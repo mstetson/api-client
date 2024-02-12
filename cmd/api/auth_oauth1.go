@@ -35,34 +35,24 @@ type OAuth1Config struct {
 }
 
 func (c *OAuth1Config) deref() (*OAuth1Config, error) {
-	var err error
-	d := *c
-	deref := func(s string) string {
-		if err != nil {
-			return ""
-		}
-		s, err = apiconfig.Deref(s)
-		return s
-	}
-	d.ConsumerKey = deref(d.ConsumerKey)
-	d.ConsumerSecret = deref(d.ConsumerSecret)
-	d.RequestTokenURL = deref(d.RequestTokenURL)
-	d.AuthorizeTokenURL = deref(d.AuthorizeTokenURL)
-	d.AccessTokenURL = deref(d.AccessTokenURL)
-	d.HttpMethod = deref(d.HttpMethod)
-	if c.AdditionalParams != nil {
-		d.AdditionalParams = make(map[string]string, len(c.AdditionalParams))
-		for k, v := range c.AdditionalParams {
-			d.AdditionalParams[k] = deref(v)
-		}
-	}
-	if c.AdditionalAuthorizationURLParams != nil {
-		d.AdditionalAuthorizationURLParams = make(map[string]string, len(c.AdditionalAuthorizationURLParams))
-		for k, v := range c.AdditionalAuthorizationURLParams {
-			d.AdditionalAuthorizationURLParams[k] = deref(v)
-		}
-	}
-	return &d, err
+	var deref apiconfig.Dereffer
+	return &OAuth1Config{
+		ConsumerKey:    deref.String(c.ConsumerKey),
+		ConsumerSecret: deref.String(c.ConsumerSecret),
+
+		RequestTokenURL:   deref.String(c.RequestTokenURL),
+		AuthorizeTokenURL: deref.String(c.AuthorizeTokenURL),
+		AccessTokenURL:    deref.String(c.AccessTokenURL),
+		AccessDuration:    c.AccessDuration,
+
+		HttpMethod:                       deref.String(c.HttpMethod),
+		BodyHash:                         c.BodyHash,
+		IgnoreTimestamp:                  c.IgnoreTimestamp,
+		SignQueryParams:                  c.SignQueryParams,
+		AdditionalParams:                 deref.StringMap(c.AdditionalParams),
+		AdditionalAuthorizationURLParams: deref.StringMap(c.AdditionalAuthorizationURLParams),
+		AuthorizeTokenURLTemplate:        deref.String(c.AuthorizeTokenURLTemplate),
+	}, deref.Error
 }
 
 var oauth1Commands = []*commander.Command{

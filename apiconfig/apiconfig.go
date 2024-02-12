@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -114,4 +115,67 @@ func (a *AuthState) Save() error {
 		return err
 	}
 	return os.WriteFile(a.FileName, buf.Bytes(), 0600)
+}
+
+/*
+Dereffer eases error handling when dereferencing many values at once.
+
+	original := &someStruct{
+		Foo: "{{ref:Something}}",
+		Bar: "Whatever",
+		Baz: []string{
+			"{{ref:something-else}}",
+			"literal",
+		},
+	}
+	var deref apiconfig.Dereffer
+	return &SomeStruct{
+		Foo: deref.String(original.Foo),
+		Bar: deref.String(original.Bar),
+		Baz: deref.StringSlice(original.Baz),
+	}, deref.Error
+*/
+type Dereffer struct {
+	Error error
+}
+
+func (d *Dereffer) String(s string) string {
+	if d.Error != nil {
+		return ""
+	}
+	s, d.Error = Deref(s)
+	return s
+}
+
+func (d *Dereffer) StringSlice(s []string) []string {
+	if s == nil {
+		return nil
+	}
+	s2 := make([]string, len(s))
+	for i := range s {
+		s2[i] = d.String(s[i])
+	}
+	return s2
+}
+
+func (d *Dereffer) StringMap(m map[string]string) map[string]string {
+	if m == nil {
+		return nil
+	}
+	m2 := make(map[string]string, len(m))
+	for k, v := range m {
+		m2[k] = d.String(v)
+	}
+	return m2
+}
+
+func (d *Dereffer) URLValues(vals url.Values) url.Values {
+	if vals == nil {
+		return nil
+	}
+	vals2 := make(url.Values, len(vals))
+	for k, v := range vals {
+		vals2[k] = d.StringSlice(v)
+	}
+	return vals2
 }

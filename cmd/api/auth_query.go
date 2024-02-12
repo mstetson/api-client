@@ -13,10 +13,11 @@ func (c *Config) queryAuthClient() (Client, error) {
 	if c.QueryAuth == nil {
 		return nil, fmt.Errorf("query auth not configured")
 	}
+	var deref apiconfig.Dereffer
 	return queryAuthClient{
 		Client: http.DefaultClient,
-		Config: c.QueryAuth,
-	}, nil
+		Config: deref.StringMap(c.QueryAuth),
+	}, deref.Error
 }
 
 type queryAuthClient struct {
@@ -27,10 +28,6 @@ type queryAuthClient struct {
 func (c queryAuthClient) Do(req *http.Request) (*http.Response, error) {
 	q := req.URL.Query()
 	for k, v := range c.Config {
-		v, err := apiconfig.Deref(v)
-		if err != nil {
-			return nil, err
-		}
 		q.Set(k, v)
 	}
 	req.URL.RawQuery = q.Encode()

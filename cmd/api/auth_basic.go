@@ -16,19 +16,12 @@ func (c *Config) basicAuthClient() (Client, error) {
 	if c.BasicAuth == nil {
 		return nil, fmt.Errorf("basic auth not configured")
 	}
-	user, err := apiconfig.Deref(c.BasicAuth.Username)
-	if err != nil {
-		return nil, fmt.Errorf("BasicAuth.Username: %w", err)
-	}
-	pass, err := apiconfig.Deref(c.BasicAuth.Password)
-	if err != nil {
-		return nil, fmt.Errorf("BasicAuth.Password: %w", err)
-	}
+	var deref apiconfig.Dereffer
 	return basicAuthClient{
 		Client:   http.DefaultClient,
-		Username: user,
-		Password: pass,
-	}, nil
+		Username: deref.String(c.BasicAuth.Username),
+		Password: deref.String(c.BasicAuth.Password),
+	}, deref.Error
 }
 
 type basicAuthClient struct {
