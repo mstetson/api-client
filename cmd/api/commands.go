@@ -6,8 +6,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
-	"text/template"
 
 	"github.com/gonuts/commander"
 )
@@ -122,17 +120,11 @@ type processedData struct {
 func (c *Command) processTemplates(cmd *commander.Command, args []string) (processedData, error) {
 	var err error
 	tmpl := func(s string) string {
-		var t *template.Template
 		if err != nil {
 			return ""
 		}
-		t, err = template.New("").Parse(s)
-		if err != nil {
-			return ""
-		}
-		var b strings.Builder
-		err = t.Execute(&b, &cmd.Flag)
-		return b.String()
+		s, err = templateString(s, &cmd.Flag)
+		return s
 	}
 	d := processedData{
 		Method:          tmpl(c.Method),

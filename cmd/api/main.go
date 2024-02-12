@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
+	"strings"
+	"text/template"
 
 	"github.com/gonuts/commander"
 
@@ -31,6 +34,7 @@ type Config struct {
 
 	BasicAuth *BasicAuthConfig
 	QueryAuth QueryAuthConfig
+	OAuth1    *OAuth1Config
 
 	Command []*Command
 }
@@ -53,9 +57,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	if config.DocsURL != "" {
-		cmd.Subcommands = append(cmd.Subcommands, docsCommand)
-	}
 	err = config.addCommands(cmd)
 	if err != nil {
 		log.Println(err)
@@ -68,7 +69,25 @@ func main() {
 	}
 }
 
+func commandName() string {
+	if *configName == "" {
+		return "api"
+	}
+	return "api -c " + *configName
+}
+
+func launchBrowser(urlStr string) error {
+	return exec.Command("web", urlStr).Run()
+}
+
 func (c *Config) addCommands(cmd *commander.Command) error {
+	if config.DocsURL != "" {
+		cmd.Subcommands = append(cmd.Subcommands, docsCommand)
+	}
+	switch c.Auth {
+	case "oauth1":
+		cmd.Subcommands = append(cmd.Subcommands, oauth1Commands...)
+	}
 	subs := append(defaultCommands, c.Command...)
 	for _, s := range subs {
 		sub, err := s.Commander()
@@ -88,6 +107,8 @@ func (c *Config) httpClient() (Client, error) {
 	switch c.Auth {
 	case "basic":
 		return c.basicAuthClient()
+	case "oauth1":
+		return c.oauth1Client()
 	case "query":
 		return c.queryAuthClient()
 	case "":
@@ -140,4 +161,28 @@ func (c *Config) doRequest(req *http.Request, out io.Writer) error {
 		return closer.Close()
 	}
 	return nil
+}
+
+var docsCommand = &commander.Command{
+	Run:       runDocs,
+	UsageLine: "docs",
+	Short:     "open documentation web site",
+}
+
+func runDocs(cmd *commander.Command, args []string) error {
+	if config.DocsURL == "" {
+		fmt.Println("no docs defined")
+		return nil
+	}
+	return launchBrowser(config.DocsURL)
+}
+
+func templateString(tmpl string, data any) (string, error) {
+	t, err := template.New("").Parse(tmpl)
+	if err != nil {
+		return "", err
+	}
+	var b strings.Builder
+	err = t.Execute(&b, data)
+	return b.String(), err
 }
