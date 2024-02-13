@@ -26,6 +26,9 @@ var cmd = &commander.Command{
 
 var configName = flag.String("c", "", "API name for configuration")
 
+var config Config
+var authState *apiconfig.AuthState
+
 type Config struct {
 	Auth               string
 	BaseURL            string
@@ -34,23 +37,23 @@ type Config struct {
 	UserAgent          string
 
 	BasicAuth *BasicAuthConfig
-	QueryAuth QueryAuthConfig
 	OAuth1    *OAuth1Config
+	OAuth2    *OAuth2Config
+	QueryAuth QueryAuthConfig
 
 	Command []*Command
 }
 
-var config Config
-var authState *apiconfig.AuthState
-
 var authTypeClients = map[string]func(*Config, *apiconfig.AuthState) (Client, error){
 	"basic":  newBasicAuthClient,
 	"oauth1": newOAuth1Client,
+	"oauth2": newOAuth2Client,
 	"query":  newQueryAuthClient,
 }
 
 var authCommands = map[string][]*commander.Command{
 	"oauth1": oauth1Commands,
+	"oauth2": oauth2Commands,
 }
 
 func main() {
