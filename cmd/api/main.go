@@ -31,6 +31,7 @@ type Config struct {
 	BaseURL            string
 	DocsURL            string
 	DefaultContentType string
+	UserAgent          string
 
 	BasicAuth *BasicAuthConfig
 	QueryAuth QueryAuthConfig

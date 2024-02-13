@@ -100,6 +100,9 @@ func (c *Command) Run(cmd *commander.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if config.UserAgent != "" {
+		req.Header.Set("User-Agent", config.UserAgent)
+	}
 	for k, v := range d.Header {
 		req.Header.Set(k, v)
 	}
