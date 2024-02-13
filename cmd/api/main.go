@@ -36,16 +36,18 @@ type Config struct {
 	DefaultContentType string
 	UserAgent          string
 
-	BasicAuth *BasicAuthConfig
-	OAuth1    *OAuth1Config
-	OAuth2    *OAuth2Config
-	QueryAuth QueryAuthConfig
+	BasicAuth  *BasicAuthConfig
+	BearerAuth *BearerAuthConfig
+	OAuth1     *OAuth1Config
+	OAuth2     *OAuth2Config
+	QueryAuth  QueryAuthConfig
 
 	Command []*Command
 }
 
 var authTypeClients = map[string]func(*Config, *apiconfig.AuthState) (Client, error){
 	"basic":  newBasicAuthClient,
+	"bearer": newBearerAuthClient,
 	"oauth1": newOAuth1Client,
 	"oauth2": newOAuth2Client,
 	"query":  newQueryAuthClient,
