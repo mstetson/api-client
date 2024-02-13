@@ -42,6 +42,8 @@ type Config struct {
 	OAuth2     *OAuth2Config
 	QueryAuth  QueryAuthConfig
 
+	Data map[string]any
+
 	Command []*Command
 }
 

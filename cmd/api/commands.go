@@ -42,28 +42,28 @@ var defaultCommands = []*Command{
 		Short:       "make a DELETE request, relative to the API base URL",
 		RequireArgs: 1,
 		Method:      "DELETE",
-		URL:         "{{ index .Args 0 }}",
+		URL:         "{{ index .Flag.Args 0 }}",
 	},
 	{
 		UsageLine:   "get <url>",
 		Short:       "make a GET request, relative to the API base URL",
 		RequireArgs: 1,
 		Method:      "GET",
-		URL:         "{{ index .Args 0 }}",
+		URL:         "{{ index .Flag.Args 0 }}",
 	},
 	{
 		UsageLine:   "head <url>",
 		Short:       "make a HEAD request, relative to the API base URL",
 		RequireArgs: 1,
 		Method:      "HEAD",
-		URL:         "{{ index .Args 0 }}",
+		URL:         "{{ index .Flag.Args 0 }}",
 	},
 	{
 		UsageLine:   "post <url>",
 		Short:       "make a POST request, relative to the API base URL",
 		RequireArgs: 1,
 		Method:      "POST",
-		URL:         "{{ index .Args 0 }}",
+		URL:         "{{ index .Flag.Args 0 }}",
 		ReadBody:    true,
 	},
 	{
@@ -71,7 +71,7 @@ var defaultCommands = []*Command{
 		Short:       "make a PUT request, relative to the API base URL",
 		RequireArgs: 1,
 		Method:      "PUT",
-		URL:         "{{ index .Args 0 }}",
+		URL:         "{{ index .Flag.Args 0 }}",
 		ReadBody:    true,
 	},
 }
@@ -115,13 +115,22 @@ type processedData struct {
 	Body   string
 }
 
+type templateData struct {
+	Flag *flag.FlagSet
+	Data map[string]any
+}
+
 func (c *Command) processTemplates(cmd *commander.Command, args []string) (processedData, error) {
 	var err error
+	tdata := templateData{
+		Flag: &cmd.Flag,
+		Data: config.Data,
+	}
 	tmpl := func(s string) string {
 		if err != nil {
 			return ""
 		}
-		s, err = templateString(s, &cmd.Flag)
+		s, err = templateString(s, tdata)
 		return s
 	}
 	d := processedData{
