@@ -64,6 +64,7 @@ func main() {
 	if *configName != "" {
 		cmd.Short = fmt.Sprintf("HTTP API CLI (%s)", *configName)
 	}
+	config.DefaultContentType = "application/json"
 	authState, err = apiconfig.Load(&config, *configName)
 	if err != nil {
 		if *configName == "" && errors.As(err, &apiconfig.ErrNotFound{}) {
