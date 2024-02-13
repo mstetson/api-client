@@ -150,6 +150,10 @@ func newOAuth1ClientConcrete(config *OAuth1Config, auth *apiconfig.AuthState) (*
 
 func (c *oauth1Client) Do(req *http.Request) (*http.Response, error) {
 	if c.client == nil {
+		if req.Body != nil {
+			// http.Client.Do guarantees close, even on error.
+			req.Body.Close()
+		}
 		return nil, fmt.Errorf("not logged in: try %s auth", commandName())
 	}
 	return c.client.Do(req)
