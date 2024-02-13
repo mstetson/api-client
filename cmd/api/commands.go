@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gonuts/commander"
 )
@@ -17,12 +18,11 @@ type Command struct {
 	Flag        []CommandFlag
 	RequireArgs int
 
-	Method          string
-	URL             string
-	Header          map[string]string
-	HasBody         bool
-	RequestCommand  string
-	ResponseCommand string
+	Method   string
+	URL      string
+	Header   map[string]string
+	ReadBody bool
+	Body     string
 }
 
 type CommandFlag struct {
@@ -64,7 +64,7 @@ var defaultCommands = []*Command{
 		RequireArgs: 1,
 		Method:      "POST",
 		URL:         "{{ index .Args 0 }}",
-		HasBody:     true,
+		ReadBody:    true,
 	},
 	{
 		UsageLine:   "put <url>",
@@ -72,7 +72,7 @@ var defaultCommands = []*Command{
 		RequireArgs: 1,
 		Method:      "PUT",
 		URL:         "{{ index .Args 0 }}",
-		HasBody:     true,
+		ReadBody:    true,
 	},
 }
 
@@ -90,11 +90,10 @@ func (c *Command) Run(cmd *commander.Command, args []string) error {
 		return err
 	}
 	var body io.Reader
-	if c.HasBody {
+	if c.ReadBody {
 		body = os.Stdin
-	}
-	if d.RequestCommand != "" {
-		panic("TODO")
+	} else if d.Body != "" {
+		body = strings.NewReader(d.Body)
 	}
 	req, err := http.NewRequestWithContext(cmd.Context(), d.Method, urlStr, body)
 	if err != nil {
@@ -106,18 +105,14 @@ func (c *Command) Run(cmd *commander.Command, args []string) error {
 	for k, v := range d.Header {
 		req.Header.Set(k, v)
 	}
-	if d.ResponseCommand != "" {
-		panic("TODO")
-	}
 	return config.doRequest(req, os.Stdout)
 }
 
 type processedData struct {
-	Method          string
-	URL             string
-	Header          map[string]string
-	RequestCommand  string
-	ResponseCommand string
+	Method string
+	URL    string
+	Header map[string]string
+	Body   string
 }
 
 func (c *Command) processTemplates(cmd *commander.Command, args []string) (processedData, error) {
@@ -130,11 +125,10 @@ func (c *Command) processTemplates(cmd *commander.Command, args []string) (proce
 		return s
 	}
 	d := processedData{
-		Method:          tmpl(c.Method),
-		URL:             tmpl(c.URL),
-		RequestCommand:  tmpl(c.RequestCommand),
-		ResponseCommand: tmpl(c.ResponseCommand),
-		Header:          make(map[string]string, len(c.Header)),
+		Method: tmpl(c.Method),
+		URL:    tmpl(c.URL),
+		Header: make(map[string]string, len(c.Header)),
+		Body:   tmpl(c.Body),
 	}
 	for k, v := range c.Header {
 		d.Header[k] = tmpl(v)
