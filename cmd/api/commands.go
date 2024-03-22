@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 
@@ -85,22 +84,15 @@ func (c *Command) Run(cmd *commander.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	urlStr, err := config.relativeURLString(d.URL)
-	if err != nil {
-		return err
-	}
 	var body io.Reader
 	if c.ReadBody {
 		body = os.Stdin
 	} else if d.Body != "" {
 		body = strings.NewReader(d.Body)
 	}
-	req, err := http.NewRequestWithContext(cmd.Context(), d.Method, urlStr, body)
+	req, err := config.newRequest(cmd.Context(), d.Method, d.URL, body)
 	if err != nil {
 		return err
-	}
-	if config.UserAgent != "" {
-		req.Header.Set("User-Agent", config.UserAgent)
 	}
 	for k, v := range d.Header {
 		req.Header.Set(k, v)

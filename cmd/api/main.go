@@ -31,6 +31,7 @@ var authState *apiconfig.AuthState
 
 type Config struct {
 	Auth               string
+	Paging             string
 	BaseURL            string
 	DocsURL            string
 	DefaultContentType string
@@ -41,6 +42,8 @@ type Config struct {
 	OAuth1     *OAuth1Config
 	OAuth2     *OAuth2Config
 	QueryAuth  QueryAuthConfig
+
+	JSONPaging *JSONPagingConfig
 
 	Data map[string]any
 
@@ -58,6 +61,10 @@ var authTypeClients = map[string]func(*Config, *apiconfig.AuthState) (Client, er
 var authCommands = map[string][]*commander.Command{
 	"oauth1": oauth1Commands,
 	"oauth2": oauth2Commands,
+}
+
+var pagingCommands = map[string][]*commander.Command{
+	"json": jsonPagingCommands,
 }
 
 func main() {
@@ -106,6 +113,9 @@ func (c *Config) addCommands(cmd *commander.Command) error {
 	if cmds := authCommands[c.Auth]; cmds != nil {
 		cmd.Subcommands = append(cmd.Subcommands, cmds...)
 	}
+	if cmds := pagingCommands[c.Paging]; cmds != nil {
+		cmd.Subcommands = append(cmd.Subcommands, cmds...)
+	}
 	subs := append(defaultCommands, c.Command...)
 	for _, s := range subs {
 		sub, err := s.Commander()
@@ -130,6 +140,21 @@ func (c *Config) httpClient() (Client, error) {
 		return nil, fmt.Errorf("unknown authorization type: %s", c.Auth)
 	}
 	return fn(c, authState)
+}
+
+func (c *Config) newRequest(ctx context.Context, method, urlStr string, body io.Reader) (*http.Request, error) {
+	u, err := c.relativeURLString(urlStr)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, method, u, body)
+	if err != nil {
+		return nil, err
+	}
+	if config.UserAgent != "" {
+		req.Header.Set("User-Agent", config.UserAgent)
+	}
+	return req, nil
 }
 
 func (c *Config) relativeURLString(urlStr string) (string, error) {
@@ -192,11 +217,24 @@ func runDocs(cmd *commander.Command, args []string) error {
 }
 
 func templateString(tmpl string, data any) (string, error) {
-	t, err := template.New("").Parse(tmpl)
+	t, err := template.New("").Funcs(templateFuncs).Parse(tmpl)
 	if err != nil {
 		return "", err
 	}
 	var b strings.Builder
 	err = t.Execute(&b, data)
 	return b.String(), err
+}
+
+var templateFuncs = template.FuncMap{
+	"setQueryParam": func(urlStr, key, value string) (string, error) {
+		u, err := url.Parse(urlStr)
+		if err != nil {
+			return "", err
+		}
+		q := u.Query()
+		q.Set(key, value)
+		u.RawQuery = q.Encode()
+		return u.String(), nil
+	},
 }
