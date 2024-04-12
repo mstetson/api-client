@@ -97,7 +97,8 @@ func (c *Command) Run(cmd *commander.Command, args []string) error {
 	for k, v := range d.Header {
 		req.Header.Set(k, v)
 	}
-	return config.doRequest(req, os.Stdout)
+	_, err = config.doRequest(req, os.Stdout)
+	return err
 }
 
 type processedData struct {

@@ -65,7 +65,7 @@ func runJSONPagingGetPaged(cmd *commander.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		err = config.doRequest(req, &buf)
+		_, err = config.doRequest(req, &buf)
 		if err != nil {
 			return err
 		}

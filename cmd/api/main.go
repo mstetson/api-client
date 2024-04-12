@@ -64,7 +64,8 @@ var authCommands = map[string][]*commander.Command{
 }
 
 var pagingCommands = map[string][]*commander.Command{
-	"json": jsonPagingCommands,
+	"json":        jsonPagingCommands,
+	"link-header": linkHeaderPagingCommands,
 }
 
 func main() {
@@ -172,7 +173,7 @@ func (c *Config) relativeURLString(urlStr string) (string, error) {
 	return base.ResolveReference(u).String(), nil
 }
 
-func (c *Config) doRequest(req *http.Request, out io.Writer) error {
+func (c *Config) doRequest(req *http.Request, out io.Writer) (resp *http.Response, err error) {
 	if req.Header.Get("Accept") == "" {
 		req.Header.Add("Accept", c.DefaultContentType)
 	}
@@ -181,25 +182,22 @@ func (c *Config) doRequest(req *http.Request, out io.Writer) error {
 	}
 	client, err := c.httpClient()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	resp, err := client.Do(req)
+	resp, err = client.Do(req)
 	if err != nil {
-		return err
+		return resp, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		resp.Write(os.Stderr)
-		return fmt.Errorf("HTTP error %s", resp.Status)
+		return resp, fmt.Errorf("HTTP error %s", resp.Status)
 	}
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		return err
+		return resp, err
 	}
-	if closer, ok := out.(io.Closer); ok {
-		return closer.Close()
-	}
-	return nil
+	return resp, nil
 }
 
 var docsCommand = &commander.Command{
