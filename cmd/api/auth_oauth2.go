@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -79,7 +80,7 @@ func (c *OAuth2Config) authStyle() oauth2.AuthStyle {
 
 var oauth2Commands = []*commander.Command{
 	{
-		UsageLine: "auth [-reset] [verification-code]",
+		UsageLine: "auth [-reset] [verification code or url]",
 		Short:     "do OAuth 2.0 authorization",
 		Flag:      *flag.NewFlagSet("auth", flag.ExitOnError),
 		Run:       runOAuth2,
@@ -213,7 +214,19 @@ func (c *oauth2Client) authAuthCode(cmd *commander.Command, args []string) error
 		fmt.Println("verify access with", commandName(), "auth CODE")
 		return launchBrowser(authCodeURL)
 	case 1:
-		err := c.exchangeCode(cmd.Context(), args[0])
+		code := args[0]
+		if strings.HasPrefix(args[0], "http") {
+			u, err := url.Parse(args[0])
+			if err != nil {
+				return err
+			}
+			code = u.Query().Get("code")
+			// TODO: check state?
+			if scopes := u.Query().Get("scope"); scopes != "" {
+				fmt.Println("Scopes:", scopes)
+			}
+		}
+		err := c.exchangeCode(cmd.Context(), code)
 		if err != nil {
 			return err
 		}
