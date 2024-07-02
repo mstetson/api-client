@@ -17,6 +17,8 @@ import (
 	"bitbucket.org/classroomsystems/api-cli/opsecret"
 )
 
+var DefaultDir = os.Getenv("API_DIR")
+
 type ErrNotFound struct {
 	FileName string
 }
@@ -83,10 +85,17 @@ func openConfig(name string) (*os.File, error) {
 		}
 		d := filepath.Dir(parent)
 		if len(d) >= len(parent) {
-			return nil, ErrNotFound{name}
+			break
 		}
 		parent = d
 	}
+	if DefaultDir != "" {
+		f, err := os.Open(filepath.Join(DefaultDir, name))
+		if err == nil {
+			return f, err
+		}
+	}
+	return nil, ErrNotFound{name}
 }
 
 type AuthState struct {
