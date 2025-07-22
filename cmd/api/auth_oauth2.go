@@ -14,7 +14,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 
-	"bitbucket.org/classroomsystems/api-cli/apiconfig"
+	"github.com/mstetson/api-client/apiconfig"
 )
 
 type OAuth2Config struct {

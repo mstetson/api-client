@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/classroomsystems/api-cli/apiconfig"
 	"github.com/gonuts/commander"
 	"github.com/mrjones/oauth"
+
+	"github.com/mstetson/api-client/apiconfig"
 )
 
 type OAuth1Config struct {

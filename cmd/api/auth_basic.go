@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"bitbucket.org/classroomsystems/api-cli/apiconfig"
+	"github.com/mstetson/api-client/apiconfig"
 )
 
 type BasicAuthConfig struct {

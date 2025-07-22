@@ -88,3 +88,9 @@ Poke at the code, it's not meant to be a black box. There are several kinds of a
 - Only 1Password CLI for secret retrieval
 - Web page launches use plan9port's web script
 - Likely others
+
+## License
+
+This software is released into the public domain. See LICENSE for details.
+
+Thanks to SchoolsPLP, LLC for funding part of the work and allowing this code to be released freely.

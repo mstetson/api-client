@@ -14,7 +14,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"bitbucket.org/classroomsystems/api-cli/opsecret"
+	"github.com/mstetson/api-client/opsecret"
 )
 
 var DefaultDir = os.Getenv("API_DIR")

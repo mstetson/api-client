@@ -16,7 +16,7 @@ import (
 
 	"github.com/gonuts/commander"
 
-	"bitbucket.org/classroomsystems/api-cli/apiconfig"
+	"github.com/mstetson/api-client/apiconfig"
 )
 
 var cmd = &commander.Command{
